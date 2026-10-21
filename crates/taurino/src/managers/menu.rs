@@ -148,29 +148,27 @@ impl MenuManager {
         raw: RawWindow<'_>,
         theme: Theme,
         explicit_menu: Option<Menu>,
-    ) -> Result<WindowMenu> {
+    ) -> anyhow::Result<WindowMenu> {
         // ---------------------------------------------------------------------
         // macOS: exactly one menu bar for the application
         // ---------------------------------------------------------------------
 
         #[cfg(target_os = "macos")]
         {
-            // Once an application-wide menu exists, every window references
-            // that same menu. A per-window explicit menu cannot replace it
-            // implicitly.
+            // Once an application-wide menu exists, reuse it.
             if let Some(menu) = self.app_wide_menu.clone() {
                 self.insert_menu_into_stash(&menu);
 
                 let _ = (raw, theme, explicit_menu);
 
+                // Required: early return.
                 return Ok(WindowMenu {
                     is_app_wide: true,
                     menu,
                 });
             }
 
-            // The first explicit builder menu becomes the application-wide
-            // menu. If none was supplied, create an empty application menu.
+            // Initialize the application-wide menu only once.
             let menu = match explicit_menu {
                 Some(menu) => menu,
                 None => Menu::new()?,
@@ -180,15 +178,16 @@ impl MenuManager {
 
             menu.init_for_nsapp();
 
-            // `raw` and `theme` are intentionally unused on macOS at present,
-            // but remain part of the uniform cross-platform API.
             let _ = (raw, theme);
 
-            return Ok(WindowMenu {
+            // Final expression: no return required.
+            Ok(WindowMenu {
                 is_app_wide: true,
                 menu,
-            });
+            })
         }
+
+        // Keep your existing non-macOS implementation here.
 
         // ---------------------------------------------------------------------
         // Windows / Linux / BSD: menu belongs to this window

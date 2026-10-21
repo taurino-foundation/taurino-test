@@ -11,6 +11,8 @@ taurino/*.so
 # Distribution / packaging
 .Python
 .venv/
+.venvs/
+
 env/
 bin/
 build/
